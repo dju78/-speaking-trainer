@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertCircle,
   BarChart3,
@@ -432,8 +432,11 @@ export default function ProfessionalSpeakerTrainerApp() {
   const [speechSupported, setSpeechSupported] = useState(true);
   const [showRecovery, setShowRecovery] = useState(false);
   const [coachReport, setCoachReport] = useState(null);
+  const [liveMessage, setLiveMessage] = useState(null);
   const recognitionRef = useRef(null);
   const finishedRef = useRef(false);
+  const lastLiveMessageTime = useRef(0);
+  const liveMessageTimeout = useRef(null);
 
   const analysis = useMemo(() => analyseTranscript(transcript, Math.max(elapsedSeconds, 1)), [transcript, elapsedSeconds]);
 
@@ -462,6 +465,51 @@ export default function ProfessionalSpeakerTrainerApp() {
     const interval = setInterval(() => setElapsedSeconds((value) => value + 1), 1000);
     return () => clearInterval(interval);
   }, [isRunning]);
+
+  useEffect(() => {
+    if (!isRunning || isFinished) return;
+
+    if (elapsedSeconds - lastLiveMessageTime.current < 20) return;
+
+    let newMessage = null;
+    let newTone = "green";
+
+    const halfTime = Math.floor(selectedMode.guideDuration / 2);
+    const wrapUpTime = Math.floor(selectedMode.guideDuration * 0.8);
+
+    if (analysis.wpm > 160) {
+      newMessage = "Slow down slightly";
+      newTone = "amber";
+    } else if (elapsedSeconds > 20 && analysis.wpm < 110) {
+      newMessage = "Add more energy";
+      newTone = "amber";
+    } else if (analysis.fillerCount > 3 && elapsedSeconds % 30 < 5) {
+      newMessage = "Avoid filler words, pause instead";
+      newTone = "amber";
+    } else if (elapsedSeconds === 20) {
+      newMessage = "Use three clear points";
+      newTone = "green";
+    } else if (elapsedSeconds === halfTime) {
+      newMessage = "Give an example";
+      newTone = "green";
+    } else if (elapsedSeconds === wrapUpTime) {
+      newMessage = "Move to your result";
+      newTone = "green";
+    } else if (elapsedSeconds === wrapUpTime + 10) {
+      newMessage = "End with a recommendation";
+      newTone = "green";
+    }
+
+    if (newMessage) {
+      setLiveMessage({ text: newMessage, tone: newTone });
+      lastLiveMessageTime.current = elapsedSeconds;
+      
+      if (liveMessageTimeout.current) clearTimeout(liveMessageTimeout.current);
+      liveMessageTimeout.current = setTimeout(() => {
+        setLiveMessage(null);
+      }, 8000);
+    }
+  }, [elapsedSeconds, isRunning, isFinished, analysis, selectedMode.guideDuration]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -565,6 +613,9 @@ export default function ProfessionalSpeakerTrainerApp() {
     stopSpeaking();
     setElapsedSeconds(0);
     setCoachReport(null);
+    setLiveMessage(null);
+    lastLiveMessageTime.current = 0;
+    if (liveMessageTimeout.current) clearTimeout(liveMessageTimeout.current);
     if (clearTranscript) {
       setTranscript("");
       setNotes("");
@@ -758,10 +809,15 @@ export default function ProfessionalSpeakerTrainerApp() {
               )}
 
               <div className="grid gap-6 2xl:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl">
-                  <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                    <Mic size={20} /> Transcript
-                  </h3>
+                <div className="relative rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl">
+                  <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="flex items-center gap-2 text-xl font-bold">
+                      <Mic size={20} /> Transcript
+                    </h3>
+                    <AnimatePresence>
+                      {liveMessage && <LiveCoachPrompt message={liveMessage} />}
+                    </AnimatePresence>
+                  </div>
                   <textarea
                     value={transcript}
                     onChange={(event) => setTranscript(event.target.value)}
@@ -1133,5 +1189,27 @@ function ProgressRoom({ sessions, setSessions }) {
         ))}
       </div>
     </section>
+  );
+}
+
+function LiveCoachPrompt({ message }) {
+  const toneClasses = {
+    green: "border-emerald-400/30 bg-emerald-500 text-white",
+    amber: "border-amber-400/30 bg-amber-400 text-slate-950",
+    purple: "border-violet-400/30 bg-violet-500 text-white",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+      className={`absolute right-4 top-4 z-10 flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl sm:relative sm:right-auto sm:top-auto sm:mb-0 sm:mt-0 ${toneClasses[message.tone]}`}
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+        <MessageCircle size={18} className={message.tone === "amber" ? "text-slate-950" : "text-white"} />
+      </div>
+      <p className="text-sm font-bold">{message.text}</p>
+    </motion.div>
   );
 }
