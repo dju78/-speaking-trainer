@@ -54,6 +54,16 @@ const modes = [
   },
 ];
 
+const interviewQuestions = [
+  { q: "Tell us about yourself.", hint: "Who you are → what you do → your key value", duration: 90 },
+  { q: "Why are you interested in this role?", hint: "Skills match → motivation → contribution", duration: 90 },
+  { q: "Describe a time you improved quality.", hint: "Situation → action → measurable result", duration: 120 },
+  { q: "Tell us about a time you worked under pressure.", hint: "Context → your approach → outcome", duration: 120 },
+  { q: "How do you communicate complex data to non-technical people?", hint: "Method → example → impact", duration: 120 },
+  { q: "Why should we hire you?", hint: "Strengths → fit → unique value", duration: 90 },
+  { q: "Describe a time you worked with others to deliver a result.", hint: "Team context → your role → outcome", duration: 120 },
+];
+
 const extraPrompts = [
   "Explain your strongest professional achievement in two minutes.",
   "Describe a difficult workplace situation and how you handled it.",
@@ -126,9 +136,32 @@ function analyseTranscript(transcript, elapsedSeconds) {
 
   const clarityScore = Math.min(100, Math.round(45 + Math.min(words.length, 120) * 0.25 + structureSignals * 8 - fillerCount * 3));
   const paceScore = wpm >= 110 && wpm <= 160 ? 90 : wpm === 0 ? 0 : wpm < 110 ? 62 : 58;
-  const confidenceScore = Math.max(0, Math.min(100, Math.round((clarityScore + paceScore + Math.max(40, 95 - fillerCount * 6)) / 3)));
+  const structureScore = Math.min(100, Math.round(40 + structureSignals * 15 + Math.min(sentenceCount, 8) * 3));
+  const deliveryScore = Math.max(0, Math.min(100, Math.round(50 + (paceScore * 0.3) - fillerCount * 4 + Math.min(words.length, 80) * 0.2)));
+  const confidenceScore = Math.max(0, Math.min(100, Math.round((clarityScore + paceScore + structureScore + deliveryScore) / 4)));
 
-  return { wordCount: words.length, fillerCount, wpm, sentenceCount, structureSignals, paceFeedback, fillerFeedback, structureFeedback, clarityScore, paceScore, confidenceScore };
+  return { wordCount: words.length, fillerCount, wpm, sentenceCount, structureSignals, paceFeedback, fillerFeedback, structureFeedback, clarityScore, paceScore, structureScore, deliveryScore, confidenceScore };
+}
+
+function speakFeedback(analysis) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const lines = [
+    `Session complete. Here is your feedback.`,
+    `Confidence score: ${analysis.confidenceScore} percent.`,
+    `Clarity score: ${analysis.clarityScore} percent.`,
+    `Structure score: ${analysis.structureScore} percent.`,
+    `Delivery score: ${analysis.deliveryScore} percent.`,
+    analysis.paceFeedback,
+    analysis.fillerFeedback,
+    analysis.structureFeedback,
+    `Well done. Press Start New Practice to go again.`,
+  ];
+  const utterance = new SpeechSynthesisUtterance(lines.join(" "));
+  utterance.lang = "en-GB";
+  utterance.rate = 0.92;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
 }
 
 export default function ProfessionalSpeakerTrainerApp() {
@@ -137,6 +170,8 @@ export default function ProfessionalSpeakerTrainerApp() {
   const [customPrompt, setCustomPrompt] = useState(selectedMode.prompt);
   const [secondsLeft, setSecondsLeft] = useState(selectedMode.duration);
   const [isRunning, setIsRunning] = useState(false);
+  const [hasFinished, setHasFinished] = useState(false);
+  const [showMindBlank, setShowMindBlank] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [notes, setNotes] = useState("");
   const [sessions, setSessions] = useState([]);
@@ -163,7 +198,13 @@ export default function ProfessionalSpeakerTrainerApp() {
 
   useEffect(() => {
     if (!isRunning) return;
-    if (secondsLeft <= 0) { setIsRunning(false); stopListening(); return; }
+    if (secondsLeft <= 0) {
+      setIsRunning(false);
+      setHasFinished(true);
+      stopListening();
+      speakFeedback(analysis);
+      return;
+    }
     const interval = setInterval(() => setSecondsLeft((v) => v - 1), 1000);
     return () => clearInterval(interval);
   }, [isRunning, secondsLeft]);
@@ -196,9 +237,13 @@ export default function ProfessionalSpeakerTrainerApp() {
     try { recognitionRef.current.stop(); } catch {}
     setIsListening(false);
   }
-  function startPractice() { setIsRunning(true); startListening(); }
+  function startPractice() { setIsRunning(true); setHasFinished(false); startListening(); }
   function pausePractice() { setIsRunning(false); stopListening(); }
-  function resetPractice() { setIsRunning(false); stopListening(); setSecondsLeft(selectedMode.duration); setTranscript(""); setNotes(""); }
+  function resetPractice() {
+    setIsRunning(false); setHasFinished(false); setShowMindBlank(false);
+    stopListening(); setSecondsLeft(selectedMode.duration); setTranscript(""); setNotes("");
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  }
   function randomPrompt() { setCustomPrompt(extraPrompts[Math.floor(Math.random() * extraPrompts.length)]); }
   function saveSession() {
     const newSession = {
@@ -212,6 +257,10 @@ export default function ProfessionalSpeakerTrainerApp() {
       elapsedSeconds,
     };
     setSessions((c) => [newSession, ...c].slice(0, 30));
+    setHasFinished(false);
+    setSecondsLeft(selectedMode.duration);
+    setTranscript("");
+    setNotes("");
   }
 
   const todaySessions = sessions.filter((s) => s.date.slice(0, 10) === getTodayKey()).length;
@@ -237,7 +286,7 @@ export default function ProfessionalSpeakerTrainerApp() {
         </header>
 
         <nav className="tab-nav">
-          {[["practice", "Practice Room", Mic], ["recovery", "Mind Blank Rescue", Brain], ["library", "Phrase Library", MessageSquare], ["progress", "Progress", BarChart3]].map(([id, label, Icon]) => (
+          {[["practice", "Practice Room", Mic], ["interview", "Interview Mode", MessageSquare], ["recovery", "Mind Blank Rescue", Brain], ["library", "Phrase Library", Timer], ["progress", "Progress", BarChart3]].map(([id, label, Icon]) => (
             <button key={id} onClick={() => setActiveTab(id)} className={`tab-btn${activeTab === id ? " active" : ""}`}>
               <Icon size={16} /> {label}
             </button>
@@ -263,17 +312,51 @@ export default function ProfessionalSpeakerTrainerApp() {
             </section>
 
             <section className="practice-right">
-              <div className="card">
-                <div className="practice-top">
-                  <div>
-                    <h2 className="mode-heading">{selectedMode.title}</h2>
-                    <p className="mode-goal">{selectedMode.goal}</p>
+              {/* Session finished banner */}
+              {hasFinished && (
+                <div className="finished-banner">
+                  <div className="finished-inner">
+                    <CheckCircle2 size={28} className="finished-icon" />
+                    <div>
+                      <p className="finished-title">Session complete! Listening to feedback now…</p>
+                      <p className="finished-sub">Your scores are updated below. Save your session or start a new practice.</p>
+                    </div>
                   </div>
-                  <div className="timer-box">
-                    <div className="timer-label">Timer</div>
-                    <div className="timer-value">{formatTime(secondsLeft)}</div>
+                  <div className="btn-row">
+                    <button className="btn-save" onClick={saveSession}><Save size={16} /> Save &amp; Start New Practice</button>
+                    <button className="btn-ghost" onClick={resetPractice}><RotateCcw size={16} /> Discard &amp; Reset</button>
+                    <button className="btn-ghost" onClick={() => { if (window.speechSynthesis) window.speechSynthesis.cancel(); }}><Volume2 size={16} /> Stop Speaking</button>
                   </div>
                 </div>
+              )}
+
+              {/* Mind blank overlay */}
+              {showMindBlank && (
+                <div className="mind-blank-overlay">
+                  <div className="mind-blank-header">
+                    <span className="mind-blank-title"><Brain size={20} /> Mind Blank — use one of these:</span>
+                    <button className="btn-ghost small" onClick={() => setShowMindBlank(false)}>✕ Close</button>
+                  </div>
+                  <div className="mind-blank-phrases">
+                    {recoveryPhrases.map((phrase) => (
+                      <button key={phrase} className="mind-blank-phrase" onClick={() => setShowMindBlank(false)}>
+                        "{phrase}"
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="card">
+                  <div className="practice-top">
+                    <div>
+                      <h2 className="mode-heading">{selectedMode.title}</h2>
+                      <p className="mode-goal">{selectedMode.goal}</p>
+                    </div>
+                    <div className="timer-box">
+                      <div className="timer-label">{hasFinished ? "Finished" : isRunning ? "Running" : "Timer"}</div>
+                      <div className={`timer-value${hasFinished ? " timer-done" : ""}`}>{formatTime(secondsLeft)}</div>
+                    </div>
+                  </div>
 
                 <div className="practice-body">
                   <div className="prompt-col">
@@ -284,7 +367,8 @@ export default function ProfessionalSpeakerTrainerApp() {
                       <button className="btn-primary" onClick={startPractice} disabled={isRunning}><Play size={16} /> Start</button>
                       <button className="btn-ghost" onClick={pausePractice}><Pause size={16} /> Pause</button>
                       <button className="btn-ghost" onClick={resetPractice}><RotateCcw size={16} /> Reset</button>
-                      <button className="btn-save" onClick={saveSession}><Save size={16} /> Save session</button>
+                      <button className="btn-mind-blank" onClick={() => setShowMindBlank(true)}><Brain size={16} /> Mind Blank</button>
+                      {!hasFinished && <button className="btn-save" onClick={saveSession}><Save size={16} /> Save session</button>}
                     </div>
                     {!speechSupported && <div className="alert-amber">Speech recognition is not supported in this browser. You can still type your transcript manually.</div>}
                     {speechSupported && (
@@ -309,19 +393,20 @@ export default function ProfessionalSpeakerTrainerApp() {
                 </div>
               </div>
 
-              <div className="two-col">
-                <div className="card">
-                  <h3 className="section-title"><Mic size={20} /> Transcript</h3>
-                  <textarea className="field-textarea tall" value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Your speech transcript will appear here. You can also type it manually after practice." />
-                </div>
-
-                <div className="card">
-                  <h3 className="section-title"><BarChart3 size={20} /> Feedback scorecard</h3>
-                  <div className="score-grid">
-                    <ScoreBox label="Confidence" value={analysis.confidenceScore} />
-                    <ScoreBox label="Clarity" value={analysis.clarityScore} />
-                    <ScoreBox label="Pace" value={analysis.paceScore} />
+                <div className="two-col">
+                  <div className="card">
+                    <h3 className="section-title"><Mic size={20} /> Transcript</h3>
+                    <textarea className="field-textarea transcript-large" value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Your speech will appear here as you speak. You can also type or edit it manually." />
                   </div>
+
+                  <div className="card">
+                    <h3 className="section-title"><BarChart3 size={20} /> Speaking scorecard</h3>
+                    <div className="score-grid four">
+                      <ScoreBox label="Confidence" value={analysis.confidenceScore} />
+                      <ScoreBox label="Clarity" value={analysis.clarityScore} />
+                      <ScoreBox label="Structure" value={analysis.structureScore} />
+                      <ScoreBox label="Delivery" value={analysis.deliveryScore} />
+                    </div>
                   <div className="metric-row">
                     <Metric label="Words" value={analysis.wordCount} />
                     <Metric label="WPM" value={analysis.wpm} />
@@ -340,6 +425,7 @@ export default function ProfessionalSpeakerTrainerApp() {
         )}
 
         {activeTab === "recovery" && <RecoveryRoom />}
+        {activeTab === "interview" && <InterviewRoom />}
         {activeTab === "library" && <PhraseLibrary />}
         {activeTab === "progress" && <ProgressRoom sessions={sessions} bestSession={bestSession} setSessions={setSessions} />}
       </div>
@@ -423,7 +509,50 @@ function RecoveryRoom() {
   );
 }
 
+function InterviewRoom() {
+  const [current, setCurrent] = useState(0);
+  const [answered, setAnswered] = useState([]);
+  const q = interviewQuestions[current];
+  return (
+    <div className="interview-layout">
+      <section className="card">
+        <h2 className="section-title"><MessageSquare size={24} /> Interview Mode</h2>
+        <p className="sub-text">Practise real interview questions. Take your time, speak clearly, and use the STAR structure.</p>
+        <div className="interview-progress">
+          {interviewQuestions.map((_, i) => (
+            <button key={i} onClick={() => setCurrent(i)}
+              className={`interview-dot${i === current ? " active" : ""}${answered.includes(i) ? " done" : ""}`}>
+              {answered.includes(i) ? <CheckCircle2 size={14} /> : i + 1}
+            </button>
+          ))}
+        </div>
+        <div className="interview-card">
+          <div className="interview-q-num">Question {current + 1} of {interviewQuestions.length}</div>
+          <p className="interview-q">{q.q}</p>
+          <div className="interview-hint"><span>Structure:</span> {q.hint}</div>
+          <div className="interview-timing">Suggested time: {q.duration} seconds</div>
+        </div>
+        <div className="btn-row" style={{marginTop:"1rem"}}>
+          <button className="btn-primary" onClick={() => { if (!answered.includes(current)) setAnswered(a => [...a, current]); setCurrent(c => Math.min(c + 1, interviewQuestions.length - 1)); }}>
+            Next question
+          </button>
+          <button className="btn-ghost" onClick={() => { setAnswered([]); setCurrent(0); }}>Restart</button>
+        </div>
+      </section>
+      <aside className="card">
+        <h3 className="section-title"><Brain size={22} /> Interview tips</h3>
+        <div className="drill-list-items">
+          {["Pause for 2 seconds before answering.","Open every answer with a clear first sentence.","Use STAR structure for behavioural questions.","End with the result and what you learned.","Speak at 120–150 words per minute.","Avoid starting sentences with \"So\" or \"Um\".","Make eye contact with the camera, not the screen."].map((tip) => (
+            <div key={tip} className="drill-item"><CheckCircle2 size={16} className="shrink-0" /> {tip}</div>
+          ))}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 function PhraseLibrary() {
+
   return (
     <div className="two-col">
       <section className="card">
@@ -436,9 +565,10 @@ function PhraseLibrary() {
         </div>
       </section>
       <section className="card">
-        <h2 className="section-title"><Timer size={24} /> 7-day improvement plan</h2>
+        <h2 className="section-title"><Timer size={24} /> 7-day training plan</h2>
+        <p className="sub-text">Short daily practice beats long infrequent sessions.</p>
         <div className="plan-list">
-          {[["Day 1","Record a 60-second introduction."],["Day 2","Practise one STAR answer."],["Day 3","Explain a data insight to a non-technical person."],["Day 4","Practise mind blank recovery phrases."],["Day 5","Give a two-minute meeting update."],["Day 6","Open a presentation with a strong hook."],["Day 7","Repeat Day 1 and compare your score."]].map(([day, task]) => (
+          {[["Day 1","60-second professional introduction"],["Day 2","STAR answer — describe a time you improved quality"],["Day 3","Meeting update — progress, risk, next steps"],["Day 4","Data explanation to a non-technical manager"],["Day 5","Presentation opening — hook, topic, why it matters"],["Day 6","Mind blank recovery — practise your bridge phrases"],["Day 7","Full mock interview — answer 3 questions in sequence"]].map(([day, task]) => (
             <div key={day} className="plan-item">
               <div className="plan-day">{day}</div>
               <div className="plan-task">{task}</div>
