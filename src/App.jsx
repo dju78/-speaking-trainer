@@ -207,7 +207,119 @@ function generateCoachingReport(analysis, modeName, elapsed) {
 }
 
 
+function downloadReport(session, allSessions = []) {
+  const { mode = "Practice Session", date, analysis: a = {}, coachingReport: report = {}, transcript = "", notes = "" } = session;
+
+  const trendRows = [...allSessions].reverse().slice(-10).map((s, i) => {
+    const sc = s.analysis?.confidenceScore || 0;
+    const bar = "#".repeat(Math.round(sc / 10));
+    return `<tr>
+      <td style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0">${i + 1}</td>
+      <td style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0">${s.mode}</td>
+      <td style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0">${new Date(s.date).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })}</td>
+      <td style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0;font-weight:700;color:${sc >= 80 ? "#166534" : sc >= 60 ? "#92400e" : "#991b1b"}">${sc}%</td>
+      <td style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0;font-family:monospace;color:#6366f1;font-size:0.75rem">${bar}</td>
+    </tr>`;
+  }).join("");
+
+  const strengthsHtml = (report.strengths || []).map(s => `<li style="color:#166534;margin-bottom:0.3rem">${s}</li>`).join("");
+  const improvesHtml  = (report.improvements || []).map(s => `<li style="color:#92400e;margin-bottom:0.3rem">${s}</li>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>Speaking Coach Report — ${mode}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;background:#fff;padding:2.5rem;max-width:820px;margin:0 auto;font-size:14px}
+  h1{font-size:1.5rem;font-weight:800;color:#020817;margin-bottom:0.2rem}
+  h2{font-size:1rem;font-weight:700;color:#1e293b;margin:1.5rem 0 0.6rem;border-bottom:2px solid #e2e8f0;padding-bottom:0.35rem}
+  h3{font-size:0.85rem;font-weight:700;color:#475569;margin:0.75rem 0 0.4rem}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:1rem;border-bottom:3px solid #020817;margin-bottom:1.5rem}
+  .app-tag{font-size:0.65rem;font-weight:800;color:#6366f1;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem}
+  .meta{text-align:right;font-size:0.78rem;color:#64748b;line-height:1.75}
+  .score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;margin:0.75rem 0}
+  .score-box{border:2px solid #e2e8f0;border-radius:10px;padding:0.75rem;text-align:center}
+  .score-val{font-size:1.8rem;font-weight:800;color:#020817}
+  .score-lbl{font-size:0.62rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.15rem}
+  .grade-band{display:flex;align-items:center;gap:0.75rem;border:2px solid #6366f1;border-radius:10px;padding:0.75rem 1rem;margin:0.6rem 0;display:inline-flex}
+  .grade-num{font-size:2.2rem;font-weight:800;color:#6366f1;line-height:1}
+  .grade-word{font-size:1rem;font-weight:800;color:#1e293b}
+  .grade-open{font-size:0.8rem;color:#475569;margin-top:0.15rem}
+  .next-box{border:1px solid #c7d2fe;background:#eef2ff;border-radius:8px;padding:0.75rem 1rem;margin-top:0.6rem;font-size:0.85rem;color:#312e81}
+  .transcript-box{border:1px solid #e2e8f0;border-radius:8px;padding:1rem;font-size:0.85rem;color:#334155;line-height:1.8;white-space:pre-wrap;background:#f8fafc;min-height:60px}
+  .note-box{border:1px solid #fde68a;background:#fffbeb;border-radius:8px;padding:0.75rem 1rem;font-size:0.85rem;color:#78350f}
+  table{width:100%;border-collapse:collapse;font-size:0.8rem}
+  th{text-align:left;padding:0.45rem 0.75rem;background:#f1f5f9;color:#475569;font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.04em}
+  ul{padding-left:1.1rem;margin:0.4rem 0}
+  li{font-size:0.85rem;line-height:1.6;margin-bottom:0.25rem}
+  .footer{margin-top:2rem;padding-top:0.75rem;border-top:1px solid #e2e8f0;font-size:0.68rem;color:#94a3b8;text-align:center}
+  @media print{body{padding:0} @page{margin:1.5cm;size:A4}}
+</style></head><body>
+
+<div class="header">
+  <div>
+    <div class="app-tag">Professional Speaking Coach</div>
+    <h1>${mode}</h1>
+  </div>
+  <div class="meta">
+    ${date ? `<div><strong>Date:</strong> ${new Date(date).toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" })}</div>` : ""}
+    ${date ? `<div><strong>Time:</strong> ${new Date(date).toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" })}</div>` : ""}
+    <div><strong>Words spoken:</strong> ${a.wordCount || 0}</div>
+    <div><strong>WPM:</strong> ${a.wpm || 0} &nbsp;|&nbsp; <strong>Fillers:</strong> ${a.fillerCount || 0}</div>
+  </div>
+</div>
+
+<h2>Scores</h2>
+<div class="score-grid">
+  <div class="score-box"><div class="score-val">${a.confidenceScore || 0}%</div><div class="score-lbl">Confidence</div></div>
+  <div class="score-box"><div class="score-val">${a.clarityScore || 0}%</div><div class="score-lbl">Clarity</div></div>
+  <div class="score-box"><div class="score-val">${a.structureScore || 0}%</div><div class="score-lbl">Structure</div></div>
+  <div class="score-box"><div class="score-val">${a.deliveryScore || 0}%</div><div class="score-lbl">Delivery</div></div>
+</div>
+
+${report.grade ? `
+<h2>Coaching Assessment</h2>
+<div class="grade-band">
+  <div class="grade-num">${report.overall || 0}</div>
+  <div><div class="grade-word">${report.grade}</div><div class="grade-open">${report.opening || ""}</div></div>
+</div>
+${strengthsHtml ? `<h3>✦ What went well</h3><ul>${strengthsHtml}</ul>` : ""}
+${improvesHtml  ? `<h3>↑ Areas to improve</h3><ul>${improvesHtml}</ul>` : ""}
+${report.nextDrill ? `<div class="next-box"><strong>Next drill →</strong> ${report.nextDrill}</div>` : ""}
+` : `
+<h2>Quick Feedback</h2>
+<ul>
+  <li>${a.paceFeedback || ""}</li>
+  <li>${a.fillerFeedback || ""}</li>
+  <li>${a.structureFeedback || ""}</li>
+</ul>
+`}
+
+<h2>Transcript</h2>
+<div class="transcript-box">${transcript || "(No transcript recorded for this session.)"}</div>
+
+${notes ? `<h2>Improvement Target</h2><div class="note-box">${notes}</div>` : ""}
+
+${allSessions.length > 1 ? `
+<h2>Progress Trend (last ${Math.min(allSessions.length, 10)} sessions, oldest → newest)</h2>
+<table>
+  <thead><tr><th>#</th><th>Drill</th><th>Date</th><th>Score</th><th>Bar</th></tr></thead>
+  <tbody>${trendRows}</tbody>
+</table>` : ""}
+
+<div class="footer">Generated by Professional Speaking Coach &nbsp;·&nbsp; ${new Date().toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" })}</div>
+</body></html>`;
+
+  const win = window.open("", "_blank");
+  if (!win) { alert("Please allow pop-ups in your browser to download the PDF report."); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 500);
+}
+
 export default function ProfessionalSpeakerTrainerApp() {
+
   const [selectedModeId, setSelectedModeId] = useState("professional-intro");
   const selectedMode = modes.find((m) => m.id === selectedModeId) || modes[0];
   const [customPrompt, setCustomPrompt] = useState(selectedMode.prompt);
@@ -406,6 +518,9 @@ export default function ProfessionalSpeakerTrainerApp() {
                     <button className="btn-save" onClick={saveSession}><Save size={16} /> Save &amp; Start New Practice</button>
                     <button className="btn-ghost" onClick={resetPractice}><RotateCcw size={16} /> Discard &amp; Reset</button>
                     <button className="btn-ghost" onClick={() => { if (window.speechSynthesis) window.speechSynthesis.cancel(); }}><Volume2 size={16} /> Stop Speaking</button>
+                    <button className="btn-pdf" onClick={() => downloadReport({ mode: selectedMode.title, date: new Date().toISOString(), analysis, coachingReport, transcript, notes }, sessions)}>
+                      ⤓ Download PDF Report
+                    </button>
                   </div>
                 </div>
               )}
@@ -841,6 +956,7 @@ function ProgressRoom({ sessions, bestSession, setSessions }) {
                 <th>Fillers</th>
                 <th>Main weakness</th>
                 <th>Next drill</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -866,6 +982,11 @@ function ProgressRoom({ sessions, bestSession, setSessions }) {
                     <td><span className={`hist-badge ${fillClass}`}>{fill}</span></td>
                     <td className="col-weakness">{getWeakness(session)}</td>
                     <td className="col-next">{getNextDrill(session)}</td>
+                    <td>
+                      <button className="btn-pdf-sm" onClick={() => downloadReport(session, sessions)} title="Download PDF report">
+                        ⤓ PDF
+                      </button>
+                    </td>
                   </tr>
                 );
               })}

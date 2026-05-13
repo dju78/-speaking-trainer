@@ -241,6 +241,27 @@ body {
 .session-prompt { color: #cbd5e1; margin-top: 0.5rem; font-size: 0.9rem; }
 .session-notes { margin-top: 0.75rem; border-radius: var(--radius-2xl); background: rgba(255,255,255,0.05); padding: 0.75rem; font-size: 0.82rem; color: #cbd5e1; }
 
+/* PDF download buttons */
+.btn-pdf {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none; color: #fff; border-radius: var(--radius-xl);
+  padding: 0.48rem 1rem; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn-pdf:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-pdf:active { transform: translateY(0); }
+
+.btn-pdf-sm {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);
+  color: #818cf8; border-radius: var(--radius-xl);
+  padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; transition: background 0.12s; white-space: nowrap;
+}
+.btn-pdf-sm:hover { background: rgba(99,102,241,0.25); }
+
 /* ── History / Progress Report ─────────────────── */
 .history-shell { display: flex; flex-direction: column; gap: 1.25rem; }
 
