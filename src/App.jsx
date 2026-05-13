@@ -164,6 +164,49 @@ function speakFeedback(analysis) {
   window.speechSynthesis.speak(utterance);
 }
 
+function generateCoachingReport(analysis, modeName, elapsed) {
+  const { confidenceScore, clarityScore, structureScore, deliveryScore, wpm, fillerCount, wordCount, structureSignals, paceScore } = analysis;
+  const overall = Math.round((confidenceScore + clarityScore + structureScore + deliveryScore) / 4);
+  const grade = overall >= 85 ? "Excellent" : overall >= 70 ? "Strong" : overall >= 55 ? "Developing" : "Needs Work";
+  const gradeColor = overall >= 85 ? "emerald" : overall >= 70 ? "blue" : overall >= 55 ? "amber" : "red";
+
+  const strengths = [];
+  if (paceScore >= 80) strengths.push("Your speaking pace was professional and easy to follow.");
+  if (structureSignals >= 2) strengths.push("You used signposting language well — your listener could follow your argument.");
+  if (fillerCount <= 2 && wordCount > 20) strengths.push("Excellent control of filler words. Your pauses felt intentional.");
+  if (wordCount >= 80) strengths.push("You filled the time with solid content — good volume of speech.");
+  if (clarityScore >= 75) strengths.push("Your message came across clearly and with focus.");
+  if (deliveryScore >= 75) strengths.push("Your delivery was measured and confident throughout.");
+  if (strengths.length === 0) strengths.push("You completed the full session — consistency is the foundation of improvement.");
+
+  const improvements = [];
+  if (wpm > 0 && wpm < 110) improvements.push(`Your pace of ${wpm} WPM was below the professional range. Aim for 120–150 WPM with energy.`);
+  if (wpm > 160) improvements.push(`At ${wpm} WPM you spoke too fast. Slow down and use deliberate pauses between points.`);
+  if (fillerCount > 3) improvements.push(`You used ${fillerCount} filler words. Replace each with a silent two-second pause instead.`);
+  if (structureSignals < 2) improvements.push("Add more signposting: say 'first', 'the key point is', or 'in summary' to guide your listener.");
+  if (wordCount < 40 && elapsed > 30) improvements.push("You spoke less than expected for the time available. Aim to fill the full session with structured content.");
+  if (improvements.length === 0) improvements.push("Add specific data or a concrete example to make your answer more memorable next time.");
+
+  const nextDrills = [
+    "Record this same drill again and compare your confidence score.",
+    "Try the STAR Answer drill and apply the same structure.",
+    "Practice the Mind Blank Recovery drill to build calm under pressure.",
+    "Move to Interview Mode and answer two questions back to back.",
+    "Reduce filler words by pausing silently before each new point.",
+  ];
+  const nextDrill = nextDrills[Math.floor(wordCount + fillerCount) % nextDrills.length];
+
+  const openingLines = {
+    "Excellent": "Outstanding session. You demonstrated clear professional communication skills.",
+    "Strong": "Good session. You showed real command of your material and delivered it with structure.",
+    "Developing": "Solid effort. You have a clear foundation to build on — the patterns are forming.",
+    "Needs Work": "Every expert started here. This session gives you clear targets to work on.",
+  };
+
+  return { overall, grade, gradeColor, strengths, improvements, nextDrill, modeName, opening: openingLines[grade] };
+}
+
+
 export default function ProfessionalSpeakerTrainerApp() {
   const [selectedModeId, setSelectedModeId] = useState("professional-intro");
   const selectedMode = modes.find((m) => m.id === selectedModeId) || modes[0];
@@ -172,6 +215,9 @@ export default function ProfessionalSpeakerTrainerApp() {
   const [isRunning, setIsRunning] = useState(false);
   const [hasFinished, setHasFinished] = useState(false);
   const [showMindBlank, setShowMindBlank] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [coachingReport, setCoachingReport] = useState(null);
   const [transcript, setTranscript] = useState("");
   const [notes, setNotes] = useState("");
   const [sessions, setSessions] = useState([]);
@@ -179,6 +225,8 @@ export default function ProfessionalSpeakerTrainerApp() {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
   const recognitionRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   const elapsedSeconds = selectedMode.duration - secondsLeft;
   const analysis = useMemo(() => analyseTranscript(transcript, Math.max(elapsedSeconds, 1)), [transcript, elapsedSeconds]);
@@ -202,6 +250,9 @@ export default function ProfessionalSpeakerTrainerApp() {
       setIsRunning(false);
       setHasFinished(true);
       stopListening();
+      stopRecording();
+      const report = generateCoachingReport(analysis, selectedMode.title, elapsedSeconds);
+      setCoachingReport(report);
       speakFeedback(analysis);
       return;
     }
@@ -237,11 +288,39 @@ export default function ProfessionalSpeakerTrainerApp() {
     try { recognitionRef.current.stop(); } catch {}
     setIsListening(false);
   }
-  function startPractice() { setIsRunning(true); setHasFinished(false); startListening(); }
-  function pausePractice() { setIsRunning(false); stopListening(); }
+  function startRecording() {
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      audioChunksRef.current = [];
+      const mr = new MediaRecorder(stream);
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setIsRecording(true);
+    }).catch(() => {});
+  }
+  function stopRecording() {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  }
+  function startPractice() {
+    setIsRunning(true); setHasFinished(false);
+    setCoachingReport(null); setAudioUrl(null);
+    startListening(); startRecording();
+  }
+  function pausePractice() { setIsRunning(false); stopListening(); stopRecording(); }
   function resetPractice() {
     setIsRunning(false); setHasFinished(false); setShowMindBlank(false);
-    stopListening(); setSecondsLeft(selectedMode.duration); setTranscript(""); setNotes("");
+    setCoachingReport(null); setAudioUrl(null);
+    stopListening(); stopRecording();
+    setSecondsLeft(selectedMode.duration); setTranscript(""); setNotes("");
     if (window.speechSynthesis) window.speechSynthesis.cancel();
   }
   function randomPrompt() { setCustomPrompt(extraPrompts[Math.floor(Math.random() * extraPrompts.length)]); }
@@ -254,13 +333,12 @@ export default function ProfessionalSpeakerTrainerApp() {
       transcript,
       notes,
       analysis,
+      coachingReport,
       elapsedSeconds,
     };
     setSessions((c) => [newSession, ...c].slice(0, 30));
-    setHasFinished(false);
-    setSecondsLeft(selectedMode.duration);
-    setTranscript("");
-    setNotes("");
+    setHasFinished(false); setCoachingReport(null); setAudioUrl(null);
+    setSecondsLeft(selectedMode.duration); setTranscript(""); setNotes("");
   }
 
   const todaySessions = sessions.filter((s) => s.date.slice(0, 10) === getTodayKey()).length;
@@ -318,11 +396,13 @@ export default function ProfessionalSpeakerTrainerApp() {
                   <div className="finished-inner">
                     <CheckCircle2 size={28} className="finished-icon" />
                     <div>
-                      <p className="finished-title">Session complete! Listening to feedback now…</p>
-                      <p className="finished-sub">Your scores are updated below. Save your session or start a new practice.</p>
+                      <p className="finished-title">Session complete — your coaching report is ready.</p>
+                      <p className="finished-sub">Listen to the spoken feedback below, review your recording, then save or reset.</p>
                     </div>
                   </div>
-                  <div className="btn-row">
+                  {audioUrl && <AudioPlayer url={audioUrl} />}
+                  {coachingReport && <CoachingReport report={coachingReport} />}
+                  <div className="btn-row" style={{marginTop:"1rem"}}>
                     <button className="btn-save" onClick={saveSession}><Save size={16} /> Save &amp; Start New Practice</button>
                     <button className="btn-ghost" onClick={resetPractice}><RotateCcw size={16} /> Discard &amp; Reset</button>
                     <button className="btn-ghost" onClick={() => { if (window.speechSynthesis) window.speechSynthesis.cancel(); }}><Volume2 size={16} /> Stop Speaking</button>
@@ -374,7 +454,8 @@ export default function ProfessionalSpeakerTrainerApp() {
                     {speechSupported && (
                       <div className="mic-status">
                         {isListening ? <Volume2 size={16} className="pulse" /> : <Mic size={16} />}
-                        {isListening ? "Listening and transcribing..." : "Speech recognition is ready. Press Start and speak clearly."}
+                        {isListening ? "Listening and transcribing..." : "Speech recognition ready. Press Start and speak clearly."}
+                        {isRecording && <span className="rec-dot" title="Recording audio">● REC</span>}
                       </div>
                     )}
                   </div>
@@ -439,6 +520,54 @@ function StatCard({ label, value, icon }) {
       <div className="stat-icon">{icon}</div>
       <div className="stat-value">{value}</div>
       <div className="stat-label">{label}</div>
+    </div>
+  );
+}
+
+function AudioPlayer({ url }) {
+  return (
+    <div className="audio-player">
+      <div className="audio-player-label"><Volume2 size={16} /> Listen back to your session</div>
+      <audio controls src={url} className="audio-element" />
+      <p className="audio-hint">Listening back helps you hear your pace, pauses, and tone — the things transcripts miss.</p>
+    </div>
+  );
+}
+
+function CoachingReport({ report }) {
+  const gradeClass = { emerald: "grade-emerald", blue: "grade-blue", amber: "grade-amber", red: "grade-red" }[report.gradeColor] || "grade-blue";
+  return (
+    <div className="coaching-report">
+      <div className="report-header">
+        <div>
+          <div className="report-label">AI Coaching Report</div>
+          <h3 className="report-mode">{report.modeName}</h3>
+          <p className="report-opening">{report.opening}</p>
+        </div>
+        <div className={`report-grade ${gradeClass}`}>
+          <div className="grade-score">{report.overall}</div>
+          <div className="grade-label">{report.grade}</div>
+        </div>
+      </div>
+
+      <div className="report-section">
+        <h4 className="report-section-title report-strengths-title">✦ What went well</h4>
+        <ul className="report-list">
+          {report.strengths.map((s, i) => <li key={i} className="report-strength"><CheckCircle2 size={15} />{s}</li>)}
+        </ul>
+      </div>
+
+      <div className="report-section">
+        <h4 className="report-section-title report-improve-title">↑ Areas to improve</h4>
+        <ul className="report-list">
+          {report.improvements.map((s, i) => <li key={i} className="report-improve"><AlertCircle size={15} />{s}</li>)}
+        </ul>
+      </div>
+
+      <div className="report-next">
+        <span className="report-next-label">Next action →</span>
+        <span className="report-next-text">{report.nextDrill}</span>
+      </div>
     </div>
   );
 }
