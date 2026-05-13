@@ -710,41 +710,169 @@ function PhraseLibrary() {
 }
 
 function ProgressRoom({ sessions, bestSession, setSessions }) {
+  const [filter, setFilter] = useState("all");
+
+  const drillTypes = ["all", ...Array.from(new Set(sessions.map((s) => s.mode)))];
+  const filtered = filter === "all" ? sessions : sessions.filter((s) => s.mode === filter);
+
+  // Trend stats
+  const totalSessions = sessions.length;
+  const avgScore = totalSessions ? Math.round(sessions.reduce((s, x) => s + (x.analysis?.confidenceScore || 0), 0) / totalSessions) : 0;
+  const avgWpm   = totalSessions ? Math.round(sessions.reduce((s, x) => s + (x.analysis?.wpm || 0), 0) / totalSessions) : 0;
+  const avgFill  = totalSessions ? Math.round(sessions.reduce((s, x) => s + (x.analysis?.fillerCount || 0), 0) / totalSessions) : 0;
+
+  // Last-7 vs prior-7 score delta
+  const last7  = sessions.slice(0, 7).map((s) => s.analysis?.confidenceScore || 0);
+  const prior7 = sessions.slice(7, 14).map((s) => s.analysis?.confidenceScore || 0);
+  const avgLast7  = last7.length  ? Math.round(last7.reduce((a, b) => a + b, 0) / last7.length)  : null;
+  const avgPrior7 = prior7.length ? Math.round(prior7.reduce((a, b) => a + b, 0) / prior7.length) : null;
+  const delta = avgLast7 !== null && avgPrior7 !== null ? avgLast7 - avgPrior7 : null;
+
+  // Derive main weakness from analysis if coachingReport not saved
+  function getWeakness(session) {
+    if (session.coachingReport?.improvements?.[0]) return session.coachingReport.improvements[0];
+    const a = session.analysis;
+    if (!a) return "—";
+    if (a.fillerCount > 6) return `High filler word use (${a.fillerCount} detected)`;
+    if (a.wpm > 0 && a.wpm < 110) return `Pace too slow (${a.wpm} WPM)`;
+    if (a.wpm > 160) return `Pace too fast (${a.wpm} WPM)`;
+    if (a.structureSignals < 2) return "Weak signposting — add 'first', 'finally', 'in summary'";
+    return "Add specific examples to strengthen your answer";
+  }
+
+  function getNextDrill(session) {
+    return session.coachingReport?.nextDrill || "Repeat this drill and aim to improve by 5 points.";
+  }
+
+  function scoreTrend(sessions) {
+    // Return last 10 sessions oldest-first for the bar chart
+    return [...sessions].reverse().slice(-10);
+  }
+
+  const chartData = scoreTrend(sessions);
+
   return (
-    <section className="card">
-      <div className="progress-header">
-        <div>
-          <h2 className="section-title"><Trophy size={24} /> Your progress</h2>
-          <p className="sub-text">Save your practice sessions and review what improved.</p>
+    <div className="history-shell">
+      {/* Summary row */}
+      <div className="history-summary">
+        <div className="history-stat-card">
+          <div className="hs-value">{totalSessions}</div>
+          <div className="hs-label">Total sessions</div>
         </div>
-        <button className="btn-ghost" onClick={() => setSessions([])}>Clear saved sessions</button>
+        <div className="history-stat-card">
+          <div className="hs-value">{avgScore}%</div>
+          <div className="hs-label">Average score</div>
+        </div>
+        <div className="history-stat-card">
+          <div className="hs-value">{avgWpm}</div>
+          <div className="hs-label">Avg WPM</div>
+        </div>
+        <div className="history-stat-card">
+          <div className="hs-value">{avgFill}</div>
+          <div className="hs-label">Avg fillers</div>
+        </div>
+        {delta !== null && (
+          <div className={`history-stat-card ${delta >= 0 ? "hs-positive" : "hs-negative"}`}>
+            <div className="hs-value">{delta >= 0 ? "+" : ""}{delta}%</div>
+            <div className="hs-label">vs previous 7</div>
+          </div>
+        )}
+        {bestSession && (
+          <div className="history-stat-card hs-best">
+            <div className="hs-value">{bestSession.analysis?.confidenceScore || 0}%</div>
+            <div className="hs-label">Best score</div>
+          </div>
+        )}
       </div>
-      {bestSession && (
-        <div className="best-session">
-          <h3 className="best-label">Best session</h3>
-          <p className="best-detail">{bestSession.mode} — {bestSession.analysis?.confidenceScore || 0}% confidence score</p>
+
+      {/* Score trend mini-chart */}
+      {chartData.length > 1 && (
+        <div className="card history-chart-card">
+          <h3 className="section-title"><BarChart3 size={18} /> Score trend (last {chartData.length} sessions)</h3>
+          <div className="history-chart">
+            {chartData.map((s, i) => {
+              const score = s.analysis?.confidenceScore || 0;
+              return (
+                <div key={s.id} className="chart-col">
+                  <div className="chart-bar-wrap">
+                    <div className="chart-bar" style={{ height: `${score}%` }} title={`${score}%`} />
+                  </div>
+                  <div className="chart-label">{score}%</div>
+                  <div className="chart-index">{i + 1}</div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="chart-hint">Each bar = one saved session (oldest → newest). Higher is better.</p>
         </div>
       )}
-      <div className="session-list">
-        {sessions.length === 0 && <div className="empty-state">No saved sessions yet. Complete one practice session and press Save session.</div>}
-        {sessions.map((session) => (
-          <article key={session.id} className="session-card">
-            <div className="session-inner">
-              <div>
-                <h3 className="session-mode">{session.mode}</h3>
-                <p className="session-date">{new Date(session.date).toLocaleString()}</p>
-                <p className="session-prompt">{session.prompt}</p>
-              </div>
-              <div className="metric-row">
-                <Metric label="Score" value={`${session.analysis?.confidenceScore || 0}%`} />
-                <Metric label="WPM" value={session.analysis?.wpm || 0} />
-                <Metric label="Fillers" value={session.analysis?.fillerCount || 0} />
-              </div>
-            </div>
-            {session.notes && <p className="session-notes">Improvement target: {session.notes}</p>}
-          </article>
-        ))}
+
+      {/* Controls */}
+      <div className="history-controls">
+        <div className="filter-row">
+          {drillTypes.map((type) => (
+            <button key={type} onClick={() => setFilter(type)}
+              className={`filter-btn${filter === type ? " active" : ""}`}>
+              {type === "all" ? "All drills" : type}
+            </button>
+          ))}
+        </div>
+        <button className="btn-ghost" onClick={() => setSessions([])}>Clear all</button>
       </div>
-    </section>
+
+      {/* Session table */}
+      <div className="card">
+        {filtered.length === 0 && (
+          <div className="empty-state">
+            {sessions.length === 0
+              ? "No saved sessions yet. Complete a practice and press Save session."
+              : "No sessions match this filter."}
+          </div>
+        )}
+
+        {filtered.length > 0 && (
+          <table className="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Drill</th>
+                <th>Score</th>
+                <th>Pace</th>
+                <th>Fillers</th>
+                <th>Main weakness</th>
+                <th>Next drill</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((session) => {
+                const score = session.analysis?.confidenceScore || 0;
+                const wpm   = session.analysis?.wpm || 0;
+                const fill  = session.analysis?.fillerCount ?? "—";
+                const scoreClass = score >= 80 ? "score-good" : score >= 60 ? "score-mid" : "score-low";
+                const paceClass  = wpm >= 110 && wpm <= 160 ? "score-good" : wpm === 0 ? "" : "score-mid";
+                const fillClass  = fill <= 2 ? "score-good" : fill <= 6 ? "score-mid" : "score-low";
+                return (
+                  <tr key={session.id}>
+                    <td className="col-date">
+                      <div className="date-day">{new Date(session.date).toLocaleDateString("en-GB", { day:"numeric", month:"short" })}</div>
+                      <div className="date-time">{new Date(session.date).toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" })}</div>
+                    </td>
+                    <td className="col-drill">
+                      <div className="drill-name">{session.mode}</div>
+                      {session.notes && <div className="drill-note">{session.notes}</div>}
+                    </td>
+                    <td><span className={`hist-badge ${scoreClass}`}>{score}%</span></td>
+                    <td><span className={`hist-badge ${paceClass}`}>{wpm > 0 ? `${wpm} wpm` : "—"}</span></td>
+                    <td><span className={`hist-badge ${fillClass}`}>{fill}</span></td>
+                    <td className="col-weakness">{getWeakness(session)}</td>
+                    <td className="col-next">{getNextDrill(session)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
   );
 }
