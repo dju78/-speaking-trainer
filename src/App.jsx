@@ -608,7 +608,7 @@ export default function ProfessionalSpeakerTrainerApp() {
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">
                 <Sparkles size={16} /> Professional Speaking Coach
               </div>
-              <h1 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-5xl">
+              <h1 className="max-w-3xl text-2xl font-bold tracking-tight sm:text-3xl lg:text-5xl">
                 Speak clearly, recover confidently, and track real communication progress.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
@@ -643,7 +643,7 @@ export default function ProfessionalSpeakerTrainerApp() {
         </nav>
 
         {activeTab === "practice" && (
-          <main className="grid gap-6 lg:grid-cols-[360px_1fr]">
+          <main className="grid gap-6 xl:grid-cols-[320px_1fr]">
             <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-xl">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
                 <ClipboardList size={22} /> Choose your drill
@@ -653,18 +653,18 @@ export default function ProfessionalSpeakerTrainerApp() {
                   <button
                     key={mode.id}
                     onClick={() => setSelectedModeId(mode.id)}
-                    className={`w-full rounded-2xl border p-4 text-left transition ${
+                    className={`w-full rounded-2xl border p-3 text-left transition ${
                       selectedModeId === mode.id
                         ? "border-white bg-white text-slate-950"
                         : "border-white/10 bg-slate-900/50 hover:bg-white/10"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-bold">{mode.title}</h3>
-                      <span className="rounded-full bg-slate-950/10 px-2 py-1 text-xs font-semibold">Guide {formatTime(mode.guideDuration)}</span>
+                      <h3 className="font-bold text-sm">{mode.title}</h3>
+                      <span className="shrink-0 rounded-full bg-slate-950/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">Guide {formatTime(mode.guideDuration)}</span>
                     </div>
-                    <p className={`mt-2 text-sm ${selectedModeId === mode.id ? "text-slate-700" : "text-slate-400"}`}>{mode.goal}</p>
-                    <p className={`mt-2 text-xs font-semibold ${selectedModeId === mode.id ? "text-slate-600" : "text-slate-500"}`}>{mode.level}</p>
+                    <p className={`mt-1.5 text-xs leading-relaxed ${selectedModeId === mode.id ? "text-slate-700" : "text-slate-400"}`}>{mode.goal}</p>
+                    <p className={`mt-2 text-[10px] font-bold uppercase tracking-wider ${selectedModeId === mode.id ? "text-slate-500" : "text-slate-500"}`}>{mode.level}</p>
                   </button>
                 ))}
               </div>
@@ -687,34 +687,34 @@ export default function ProfessionalSpeakerTrainerApp() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_260px]">
+                <div className="mt-5 grid gap-4 2xl:grid-cols-[1fr_280px]">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-300">Speaking prompt</label>
                     <textarea
                       value={customPrompt}
                       onChange={(event) => setCustomPrompt(event.target.value)}
-                      className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-slate-100 outline-none ring-0 focus:border-white/30"
+                      className="min-h-[140px] w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-base leading-relaxed text-slate-100 outline-none ring-0 focus:border-white/30"
                     />
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button onClick={randomPrompt} className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/10">
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <button onClick={randomPrompt} className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/10">
                         Generate prompt
                       </button>
-                      <button onClick={startPractice} disabled={isRunning} className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">
+                      <button onClick={startPractice} disabled={isRunning} className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">
                         <Play size={16} /> Start
                       </button>
-                      <button onClick={pausePractice} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/10">
+                      <button onClick={pausePractice} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/10">
                         <Pause size={16} /> Pause
                       </button>
-                      <button onClick={() => finishPractice("button")} disabled={!isRunning && !transcript} className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-3 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">
+                      <button onClick={() => finishPractice("button")} disabled={!isRunning && !transcript} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2 text-sm font-bold text-white disabled:opacity-50">
                         <CheckCircle2 size={16} /> Finish Speaking
                       </button>
-                      <button onClick={() => setShowRecovery(true)} className="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-3 py-2 text-sm font-bold text-white">
+                      <button onClick={() => setShowRecovery(true)} className="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-5 py-2 text-sm font-bold text-white hover:bg-violet-400">
                         <Brain size={16} /> Mind Blank
                       </button>
-                      <button onClick={() => resetPractice(true)} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/10">
+                      <button onClick={() => resetPractice(true)} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/10">
                         <RotateCcw size={16} /> Reset
                       </button>
-                      <button onClick={saveSession} disabled={!transcript} className="inline-flex items-center gap-2 rounded-xl bg-sky-400 px-3 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">
+                      <button onClick={saveSession} disabled={!transcript} className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-5 py-2 text-sm font-bold text-white disabled:opacity-50">
                         <Save size={16} /> Save session
                       </button>
                     </div>
@@ -757,16 +757,16 @@ export default function ProfessionalSpeakerTrainerApp() {
                 <LiveCommunicationCoach report={coachReport} analysis={analysis} onPractice={() => practiseRecommendedDrill(coachReport.recommendedDrill.id)} />
               )}
 
-              <div className="grid gap-6 xl:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-xl">
-                  <h3 className="mb-3 flex items-center gap-2 text-xl font-bold">
+              <div className="grid gap-6 2xl:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl">
+                  <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
                     <Mic size={20} /> Transcript
                   </h3>
                   <textarea
                     value={transcript}
                     onChange={(event) => setTranscript(event.target.value)}
                     placeholder="Your speech transcript will appear here. You can also type it manually after practice."
-                    className="min-h-[340px] w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-base leading-7 text-slate-100 outline-none focus:border-white/30"
+                    className="min-h-[360px] w-full rounded-2xl border border-white/10 bg-slate-950 p-5 text-lg leading-relaxed text-slate-100 outline-none focus:border-white/30"
                   />
                 </div>
 
@@ -929,11 +929,11 @@ function StatCard({ label, value, icon }) {
 
 function ScoreBox({ label, value }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900 p-3 text-center">
-      <div className="text-2xl font-bold">{value}%</div>
-      <div className="text-xs text-slate-400">{label}</div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-white" style={{ width: `${value}%` }} />
+    <div className="flex min-h-[110px] flex-col justify-center rounded-2xl border border-white/10 bg-slate-900 p-4 text-center">
+      <div className="mb-1 text-3xl font-bold">{value}%</div>
+      <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</div>
+      <div className="mt-auto h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${value}%` }} />
       </div>
     </div>
   );
