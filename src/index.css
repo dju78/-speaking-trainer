@@ -489,115 +489,216 @@ body {
    MOBILE STYLES
    ============================================= */
 
-/* Prevent iOS text size adjustment */
-html { -webkit-text-size-adjust: 100%; }
+/* Prevent iOS/Android text size adjustment */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 /* Safe area for notched/punch-hole phones */
 .app-shell {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Tighter padding on phones */
+/* ═══════════════════════════════════════════════
+   MOBILE — Samsung S25 Ultra & similar (≤639px)
+   ═══════════════════════════════════════════════ */
 @media(max-width:639px) {
-  .container { padding: 0.875rem 0.875rem 5.5rem; }
-  .app-header { padding: 1.25rem; border-radius: 1.25rem; margin-bottom: 1rem; }
-  .header-text h1 { font-size: 1.45rem; }
-  .header-text p { font-size: 0.85rem; }
-  .stat-grid { min-width: unset; }
 
-  /* Tab nav becomes a sticky bottom bar on mobile */
+  /* Base sizing — larger base so nothing is tiny */
+  html  { font-size: 17px; }
+  body  { font-size: 1rem; }
+
+  /* Container */
+  .container {
+    padding: 1rem 0.9rem 6.5rem; /* extra bottom for 5-tab nav */
+  }
+
+  /* Header */
+  .app-header    { padding: 1.25rem; border-radius: 1.25rem; margin-bottom: 1rem; }
+  .header-text h1{ font-size: 1.5rem; line-height: 1.3; }
+  .header-text p { font-size: 0.92rem; }
+  .stat-grid     { min-width: unset; gap: 0.5rem; }
+  .badge         { font-size: 0.78rem; }
+
+  /* ── Bottom tab nav (5 tabs) ── */
   .tab-nav {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 100;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr); /* 5 equal columns */
     gap: 0;
-    background: rgba(2,8,23,0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(2,8,23,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border);
     border-radius: 0;
     margin: 0;
-    padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
+    padding: 0.4rem 0.25rem calc(0.4rem + env(safe-area-inset-bottom));
   }
   .tab-btn {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.2rem;
-    padding: 0.45rem 0.25rem;
-    border-radius: 0.75rem;
+    gap: 0.15rem;
+    padding: 0.4rem 0.15rem;
+    border-radius: 0.6rem;
     border: none;
     background: transparent;
-    font-size: 0.65rem;
-    min-height: 52px;
+    font-size: 0.6rem;   /* small label under icon */
+    min-height: 56px;    /* good touch target */
+    line-height: 1.1;
   }
   .tab-btn.active {
     background: rgba(255,255,255,0.12);
     color: var(--white);
     border: none;
   }
-  .tab-btn svg { width: 20px; height: 20px; }
+  .tab-btn svg { width: 22px; height: 22px; }
 
-  /* Cards smaller padding */
-  .card { padding: 1rem; border-radius: 1.25rem; }
-  .card-inner { padding: 1rem; }
+  /* ── Cards ── */
+  .card { padding: 1.1rem; border-radius: 1.25rem; }
 
-  /* Practice layout fully stacked */
+  /* ── Layout ── */
   .practice-layout { grid-template-columns: 1fr; gap: 1rem; }
-  .two-col { grid-template-columns: 1fr; }
+  .two-col         { grid-template-columns: 1fr; }
 
-  /* Drill list horizontal scroll on mobile */
+  /* ── Drill list horizontal scroll ── */
   .mode-list {
     display: flex;
     flex-direction: row;
     overflow-x: auto;
-    gap: 0.6rem;
+    gap: 0.65rem;
     padding-bottom: 0.5rem;
     scrollbar-width: none;
   }
   .mode-list::-webkit-scrollbar { display: none; }
   .mode-btn {
-    min-width: 200px;
+    min-width: 220px;
     flex-shrink: 0;
-    padding: 0.875rem;
+    padding: 1rem;
   }
+  .mode-btn-title { font-size: 0.95rem; }
+  .mode-btn-goal  { font-size: 0.82rem; }
 
-  /* Bigger timer on mobile */
-  .timer-value { font-size: 3rem; }
+  /* ── Timer ── */
+  .timer-value { font-size: 3.25rem; }
+  .timer-label { font-size: 0.78rem; }
 
-  /* Buttons full-width on mobile */
-  .btn-row { flex-direction: column; }
-  .btn-ghost, .btn-primary, .btn-save {
+  /* ── Score grid: 2×2 on mobile (not 4×1) ── */
+  .score-grid      { grid-template-columns: 1fr 1fr !important; gap: 0.65rem; }
+  .score-box       { padding: 0.85rem; }
+  .score-value     { font-size: 1.6rem; }
+  .score-label     { font-size: 0.72rem; }
+
+  /* ── Buttons ── */
+  .btn-row {
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .btn-ghost,
+  .btn-primary,
+  .btn-save,
+  .btn-pdf,
+  .btn-mind-blank {
     width: 100%;
     justify-content: center;
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
-    min-height: 48px; /* touch target */
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+    min-height: 52px;
+    border-radius: 0.875rem;
+  }
+  .btn-ghost.small {
+    width: auto;
+    min-height: 40px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
   }
 
-  /* Taller textareas easier to use on phone */
-  .field-textarea { min-height: 100px; font-size: 1rem; }
-  .field-textarea.tall { min-height: 180px; }
+  /* ── Textareas ── */
+  .field-textarea              { min-height: 110px; font-size: 1rem; }
+  .field-textarea.tall         { min-height: 190px; }
+  .field-textarea.transcript-large { min-height: 260px; font-size: 1rem; }
 
-  /* Phrase display smaller on mobile */
-  .phrase-display { font-size: 1.15rem; }
+  /* ── Metrics row ── */
+  .metric-row  { gap: 0.5rem; }
+  .metric-val  { font-size: 1.25rem; }
+  .metric-label{ font-size: 0.7rem; }
 
-  /* Recovery steps stack 2x2 */
-  .recovery-steps { grid-template-columns: 1fr 1fr; }
+  /* ── Section titles ── */
+  .section-title { font-size: 1rem; }
+  .sub-text      { font-size: 0.88rem; }
+
+  /* ── Coaching report ── */
+  .coaching-report    { padding: 1rem; }
+  .report-header      { flex-direction: column; gap: 0.75rem; }
+  .report-grade       { align-self: flex-start; }
+  .grade-score        { font-size: 1.5rem; }
+  .report-opening     { font-size: 0.88rem; }
+  .report-list li     { font-size: 0.88rem; }
+
+  /* ── Audio player ── */
+  .audio-element { height: 44px; }
+
+  /* ── History summary cards ── */
+  .history-summary    { gap: 0.5rem; }
+  .history-stat-card  { padding: 0.85rem 0.9rem; min-width: 80px; }
+  .hs-value           { font-size: 1.35rem; }
+  .hs-label           { font-size: 0.68rem; }
+
+  /* ── History table scrolls horizontally ── */
+  .history-table      { display: block; overflow-x: auto; white-space: nowrap; font-size: 0.85rem; }
+  .col-weakness, .col-next { min-width: 210px; white-space: normal; font-size: 0.82rem; }
+  .history-table th   { font-size: 0.7rem; padding: 0.5rem 0.6rem; }
+  .history-table td   { padding: 0.65rem 0.6rem; }
+  .hist-badge         { font-size: 0.8rem; padding: 0.25rem 0.65rem; }
+
+  /* ── Filter buttons ── */
+  .filter-btn         { font-size: 0.82rem; padding: 0.4rem 0.8rem; min-height: 40px; }
+
+  /* ── Mind blank overlay ── */
+  .mind-blank-phrase  { font-size: 0.92rem; padding: 0.95rem 1rem; }
+
+  /* ── Finished banner ── */
+  .finished-title     { font-size: 1rem; }
+  .finished-sub       { font-size: 0.85rem; }
+
+  /* ── Interview ── */
+  .interview-q        { font-size: 1.15rem; }
+  .interview-hint     { font-size: 0.88rem; }
+  .interview-dot      { width: 2.5rem; height: 2.5rem; }
+
+  /* ── Recovery ── */
+  .recovery-steps  { grid-template-columns: 1fr 1fr; }
   .recovery-layout { grid-template-columns: 1fr; }
+  .phrase-display  { font-size: 1.15rem; }
 
-  /* Progress header */
+  /* ── Plan / Phrase library ── */
+  .plan-day  { font-size: 0.78rem; }
+  .plan-task { font-size: 0.88rem; }
+  .phrase-item { font-size: 0.92rem; }
+
+  /* ── Progress header ── */
   .progress-header { flex-direction: column; }
+  .session-inner   { flex-direction: column; }
 
-  /* Session card */
-  .session-inner { flex-direction: column; }
+  /* ── Practice top ── */
+  .practice-top   { gap: 0.75rem; }
+  .mode-heading   { font-size: 1.15rem; }
+  .mode-goal      { font-size: 0.88rem; }
+
+  /* ── Mic status ── */
+  .mic-status { font-size: 0.88rem; min-height: 44px; }
+
+  /* ── Structure box ── */
+  .structure-item { font-size: 0.9rem; }
+  .step-num       { width: 1.6rem; height: 1.6rem; font-size: 0.78rem; }
 }
 
-/* Medium phones / large phones in landscape */
-@media(min-width:400px) and (max-width:639px) {
-  .header-text h1 { font-size: 1.65rem; }
+/* ── Landscape on phone ── */
+@media(max-width:639px) and (orientation:landscape) {
+  .tab-nav   { padding: 0.25rem 0.5rem; }
+  .tab-btn   { min-height: 44px; font-size: 0.55rem; }
+  .tab-btn svg { width: 18px; height: 18px; }
+  .container { padding-bottom: 5rem; }
 }
 
 /* Tablets — keep side-by-side drill list */
@@ -607,11 +708,12 @@ html { -webkit-text-size-adjust: 100%; }
   .mode-list { flex-direction: row; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.5rem; }
   .mode-list::-webkit-scrollbar { display: none; }
   .mode-btn { min-width: 200px; flex-shrink: 0; }
+  .tab-nav  { grid-template-columns: repeat(5, 1fr); }
 }
 
 /* Improve touch targets globally for touch devices */
 @media(hover:none) {
-  .btn-ghost, .btn-primary, .btn-save, .tab-btn, .mode-btn {
+  .btn-ghost, .btn-primary, .btn-save, .tab-btn, .mode-btn, .btn-pdf, .btn-mind-blank {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
