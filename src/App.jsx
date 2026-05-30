@@ -150,6 +150,106 @@ const professionalPhraseBanks = {
   ],
 };
 
+const appFeedbackPhrases = [
+  "your latest score is", "focus on one", "practise your latest score",
+  "practice your latest score", "recent average", "you need more focus",
+  "points below your recent average", "your confidence is building",
+  "your next target is", "good work", "your pace is too fast",
+  "your pace is too slow", "your pace is strong", "good control of filler words",
+  "some filler words detected", "use signposting words", "good structure",
+  "start speaking to calculate", "no transcript yet", "monitor progress",
+  "progress up", "needs focus", "you are improving", "you are maintaining",
+  "save a few more sessions", "good effort",
+];
+
+const correctionRules = [
+  [/\bhigher(?=[\s,]+my\s+name)/gi, "Hi,"],
+  [/\bdalamalamayelil\b/gi, "Daramola Omoyele"],
+  [/\bdaramola\s+omo\s*yele?\b/gi, "Daramola Omoyele"],
+  [/\bdaramola\s+omoyali\b/gi, "Daramola Omoyele"],
+  [/\bcanada\s+contact\b/gi, "chartered accountant"],
+  [/\baccount\s+contact\b/gi, "chartered accountant"],
+  [/\bcharter\s+accountant\b/gi, "chartered accountant"],
+  [/\bchartered\s+account\b(?!ant)/gi, "chartered accountant"],
+  [/\bi\s+good\s+in\b/gi, "I am skilled in"],
+  [/\bi\s+good\s+at\b/gi, "I am skilled in"],
+  [/\bbuilding\s+dashboard\b(?!s)/gi, "building dashboards"],
+  [/\bdecision\s+making\s+support\b/gi, "decision-making support"],
+  [/\bdecision\s+making\b/gi, "decision-making"],
+  [/\bstake\s+holder\b/gi, "stakeholder"],
+  [/\ban\s+an\s+/gi, "an "],
+  [/\band\s+and\s+/gi, "and "],
+  [/\bi\s+am\s+familiar\s+and\s+i\s+have\b/gi, "I have"],
+  [/\ba\s+very\s+strong\s+background\b/gi, "a strong background"],
+];
+
+const professionalTemplates = [
+  { label: "Opening", text: "My name is..." },
+  { label: "Background", text: "My professional background is in..." },
+  { label: "Key strengths", text: "My key strengths are..." },
+  { label: "Current role", text: "In my current role, I..." },
+  { label: "Value", text: "The value I bring is..." },
+  { label: "Closing", text: "Overall, I would describe myself as..." },
+];
+
+const suggestedClosingSentence =
+  "Overall, I bring strong analytical skills, attention to detail, and a clear focus on using data to improve decision-making.";
+
+function cleanTranscript(rawText) {
+  if (!rawText || rawText.trim().length < 5) return rawText || "";
+  let text = rawText;
+  for (const phrase of appFeedbackPhrases) {
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    text = text.replace(new RegExp(escaped + "[^.!?]*[.!?]?", "gi"), " ");
+  }
+  for (const [pattern, replacement] of correctionRules) {
+    text = text.replace(pattern, replacement);
+  }
+  text = text.replace(/\b(\w+)\s+\1\b/gi, "$1");
+  text = text.replace(/\s+/g, " ").trim();
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+  text = text.replace(/([.!?]\s+)(\w)/g, (_m, sep, ch) => sep + ch.toUpperCase());
+  text = text.replace(/\bi\b(?!')/g, "I");
+  if (text.length > 10 && !/[.!?]$/.test(text.trim())) text = text.trim() + ".";
+  return text;
+}
+
+function generateProfessionalVersion(cleanText, mode) {
+  if (!cleanText || cleanText.trim().split(/\s+/).length < 15) return "";
+  const lower = cleanText.toLowerCase();
+  if (mode?.category === "interview" || mode?.id === "professional-intro") {
+    const parts = [];
+    const nameMatch = cleanText.match(/(?:my name is|I am|I'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i);
+    if (nameMatch) parts.push(`Hi, my name is ${nameMatch[1]}.`);
+    const roles = [];
+    if (/economist/i.test(lower)) roles.push("economist");
+    if (/data\s*analyst/i.test(lower)) roles.push("data analyst");
+    if (/chartered\s*accountant/i.test(lower)) roles.push("chartered accountant");
+    if (/policy/i.test(lower)) roles.push("policy researcher");
+    if (roles.length > 0) {
+      const r = roles.length > 1 ? roles.slice(0, -1).join(", ") + ", and " + roles[roles.length - 1] : roles[0];
+      parts.push(`I am ${/^[aeiou]/i.test(r) ? "an" : "a"} ${r} with a strong background in statistical analysis, data visualisation, and evidence-based decision-making.`);
+    }
+    const skills = [];
+    if (/quantitative/i.test(lower)) skills.push("analyse quantitative and qualitative data");
+    if (/dashboard/i.test(lower)) skills.push("build dashboards");
+    if (/trend|insight|analy/i.test(lower)) skills.push("identify trends");
+    if (/stakeholder|communicat/i.test(lower)) skills.push("communicate insights clearly to support management decisions");
+    if (skills.length > 0) parts.push(`In my current work, I ${skills.join(", ")}.`);
+    const tools = [];
+    if (/excel/i.test(lower)) tools.push("Excel");
+    if (/power\s*bi/i.test(lower)) tools.push("Power BI");
+    if (/python/i.test(lower)) tools.push("Python");
+    if (/sql/i.test(lower)) tools.push("SQL");
+    if (tools.length > 0) parts.push(`I am confident using ${tools.join(", ")}, and I have experience working with stakeholders to turn complex data into practical recommendations.`);
+    parts.push(suggestedClosingSentence);
+    if (parts.length >= 2) return parts.join("\n\n");
+  }
+  const sentences = cleanText.split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 5);
+  if (sentences.length < 2) return "";
+  return sentences.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).map((s) => (s.endsWith(".") ? s : s + ".")).join(" ");
+}
+
 function formatTime(seconds) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -267,9 +367,11 @@ function analyseTranscript(transcript, elapsedSeconds) {
   ].filter((signal) => lower.includes(signal)).length;
 
   let paceFeedback = "Start speaking to calculate your pace.";
-  if (wpm > 0 && wpm < 110) paceFeedback = "Your pace may be too slow. Add energy and reduce long gaps.";
-  if (wpm >= 110 && wpm <= 160) paceFeedback = "Your pace is strong and professional.";
-  if (wpm > 160) paceFeedback = "Your pace may be too fast. Slow down and use short pauses.";
+  if (wpm > 0 && wpm < 110) paceFeedback = "Your pace is too slow. Add more energy and flow.";
+  if (wpm >= 110 && wpm < 130) paceFeedback = "Slightly slow. Try adding a bit more energy.";
+  if (wpm >= 130 && wpm <= 160) paceFeedback = "Good pace for a professional interview.";
+  if (wpm > 160 && wpm <= 180) paceFeedback = "Slightly fast. Use short pauses between points.";
+  if (wpm > 180) paceFeedback = "Your pace is too fast. Slow down and use short pauses.";
 
   let fillerFeedback = "No transcript yet.";
   if (words.length > 0 && fillerCount <= 2) fillerFeedback = "Good control of filler words.";
@@ -282,7 +384,7 @@ function analyseTranscript(transcript, elapsedSeconds) {
   const structureScore = Math.min(100, Math.round(45 + structureSignals * 10 + Math.min(sentenceCount, 8) * 3));
   const professionalLanguageScore = Math.min(100, Math.round(45 + professionalSignals * 8 - fillerCount * 2));
   const clarityScore = Math.min(100, Math.round(45 + Math.min(words.length, 160) * 0.18 + structureSignals * 6 + professionalSignals * 4 - fillerCount * 3));
-  const paceScore = wpm >= 110 && wpm <= 160 ? 90 : wpm === 0 ? 0 : wpm < 110 ? 62 : 58;
+  const paceScore = wpm >= 130 && wpm <= 160 ? 92 : wpm >= 110 && wpm < 130 ? 72 : wpm > 160 && wpm <= 180 ? 68 : wpm === 0 ? 0 : wpm < 110 ? 55 : 42;
   const deliveryScore = Math.max(0, Math.min(100, Math.round((paceScore + Math.max(35, 95 - fillerCount * 7) + structureScore) / 3)));
   const confidenceScore = Math.max(0, Math.min(100, Math.round((clarityScore + paceScore + structureScore + deliveryScore) / 4)));
 
@@ -390,7 +492,11 @@ function generateLiveCoachReport({ transcript, analysis, mode, sessions }) {
   const recommendedDrillId = getRecommendedDrill(improvementArea.name);
   const recommendedDrill = modes.find((item) => item.id === recommendedDrillId) || modes[0];
 
-  const coachMessage = `Good work. Your confidence is building. Your next target is ${improvementArea.name.toLowerCase()}. Practise ${recommendedDrill.title} and end with a clear summary sentence.`;
+  const coachMessage = analysis.wpm > 180
+    ? `Good effort. Your main improvement area is ${improvementArea.name.toLowerCase()}. Slow down, pause after your name, and speak in short professional sentences. Focus on clarity, structure, and a strong closing sentence.`
+    : analysis.wpm > 0 && analysis.wpm < 110
+    ? `Good effort. Your main improvement area is ${improvementArea.name.toLowerCase()}. Add more energy to your delivery. Speak with purpose and keep your sentences flowing. Practise ${recommendedDrill.title}.`
+    : `Good effort. Your main improvement area is ${improvementArea.name.toLowerCase()}. Practise ${recommendedDrill.title} and end with a clear summary sentence. Focus on clarity, structure, and a strong closing.`;
 
   return {
     improvementArea,
@@ -433,12 +539,17 @@ export default function ProfessionalSpeakerTrainerApp() {
   const [showRecovery, setShowRecovery] = useState(false);
   const [coachReport, setCoachReport] = useState(null);
   const [liveMessage, setLiveMessage] = useState(null);
+  const [transcriptView, setTranscriptView] = useState("raw");
+  const [copySuccess, setCopySuccess] = useState(false);
   const recognitionRef = useRef(null);
   const finishedRef = useRef(false);
   const lastLiveMessageTime = useRef(0);
   const liveMessageTimeout = useRef(null);
+  const lastFinalRef = useRef("");
 
-  const analysis = useMemo(() => analyseTranscript(transcript, Math.max(elapsedSeconds, 1)), [transcript, elapsedSeconds]);
+  const cleanedTranscript = useMemo(() => cleanTranscript(transcript), [transcript]);
+  const professionalVersion = useMemo(() => generateProfessionalVersion(cleanedTranscript, selectedMode), [cleanedTranscript, selectedMode]);
+  const analysis = useMemo(() => analyseTranscript(cleanedTranscript || transcript, Math.max(elapsedSeconds, 1)), [cleanedTranscript, transcript, elapsedSeconds]);
 
   useEffect(() => {
     const stored = localStorage.getItem("speakerTrainerSessions");
@@ -535,7 +646,15 @@ export default function ProfessionalSpeakerTrainerApp() {
       }
 
       if (finalText) {
-        setTranscript((current) => `${current} ${finalText}`.replace(/\s+/g, " ").trim());
+        const trimmed = finalText.trim();
+        // Skip if this is a duplicate of the last final chunk
+        if (trimmed === lastFinalRef.current) return;
+        // Skip if it contains app-generated feedback
+        const lower = trimmed.toLowerCase();
+        const isAppFeedback = appFeedbackPhrases.some((p) => lower.includes(p));
+        if (isAppFeedback) return;
+        lastFinalRef.current = trimmed;
+        setTranscript((current) => `${current} ${trimmed}`.replace(/\s+/g, " ").trim());
       }
 
       if (/\bthank\s+you\b/i.test(fullDetectedText) && !finishedRef.current) {
@@ -614,7 +733,10 @@ export default function ProfessionalSpeakerTrainerApp() {
     setElapsedSeconds(0);
     setCoachReport(null);
     setLiveMessage(null);
+    setTranscriptView("raw");
+    setCopySuccess(false);
     lastLiveMessageTime.current = 0;
+    lastFinalRef.current = "";
     if (liveMessageTimeout.current) clearTimeout(liveMessageTimeout.current);
     if (clearTranscript) {
       setTranscript("");
@@ -642,6 +764,8 @@ export default function ProfessionalSpeakerTrainerApp() {
       modeId: selectedMode.id,
       prompt: customPrompt,
       transcript,
+      cleanedTranscript,
+      professionalVersion,
       notes,
       analysis,
       coachReport: report,
@@ -818,12 +942,81 @@ export default function ProfessionalSpeakerTrainerApp() {
                       {liveMessage && <LiveCoachPrompt message={liveMessage} />}
                     </AnimatePresence>
                   </div>
-                  <textarea
-                    value={transcript}
-                    onChange={(event) => setTranscript(event.target.value)}
-                    placeholder="Your speech transcript will appear here. You can also type it manually after practice."
-                    className="min-h-[360px] w-full rounded-2xl border border-white/10 bg-slate-950 p-5 text-lg leading-relaxed text-slate-100 outline-none focus:border-white/30"
-                  />
+
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    {[
+                      ["raw", "Raw"],
+                      ["clean", "Clean"],
+                      ["professional", "Professional"],
+                    ].map(([id, label]) => (
+                      <button
+                        key={id}
+                        onClick={() => setTranscriptView(id)}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                          transcriptView === id
+                            ? "bg-white text-slate-950"
+                            : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    {transcriptView === "professional" && professionalVersion && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(professionalVersion).then(() => {
+                            setCopySuccess(true);
+                            setTimeout(() => setCopySuccess(false), 2000);
+                          });
+                        }}
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-400"
+                      >
+                        <ClipboardList size={14} />
+                        {copySuccess ? "Copied!" : "Copy"}
+                      </button>
+                    )}
+                  </div>
+
+                  {transcriptView === "raw" && (
+                    <textarea
+                      value={transcript}
+                      onChange={(event) => setTranscript(event.target.value)}
+                      placeholder="Your speech transcript will appear here. You can also type it manually after practice."
+                      className="min-h-[300px] w-full rounded-2xl border border-white/10 bg-slate-950 p-5 text-lg leading-relaxed text-slate-100 outline-none focus:border-white/30"
+                    />
+                  )}
+                  {transcriptView === "clean" && (
+                    <div className="min-h-[300px] rounded-2xl border border-white/10 bg-slate-950 p-5 text-lg leading-relaxed text-slate-100">
+                      {cleanedTranscript || <span className="text-slate-500">Speak or type to see the cleaned transcript.</span>}
+                    </div>
+                  )}
+                  {transcriptView === "professional" && (
+                    <div className="min-h-[300px] rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-5 text-lg leading-relaxed text-emerald-50">
+                      {professionalVersion ? (
+                        professionalVersion.split("\n\n").map((para, i) => (
+                          <p key={i} className={i > 0 ? "mt-4" : ""}>{para}</p>
+                        ))
+                      ) : (
+                        <span className="text-slate-500">Speak at least 15 words to generate a professional version.</span>
+                      )}
+                    </div>
+                  )}
+
+                  {transcript && (
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Speaking templates</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {professionalTemplates.map((t) => (
+                          <span key={t.label} className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
+                            <strong className="text-slate-100">{t.label}:</strong> {t.text}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs italic text-slate-500">
+                        Suggested closing: "{suggestedClosingSentence}"
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-xl">
@@ -913,13 +1106,21 @@ function LiveCommunicationCoach({ report, analysis, onPractice }) {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 lg:col-span-2">
           <h3 className="text-lg font-bold">Better way to say it</h3>
           <div className="mt-3 grid gap-3">
-            {report.reframes.length === 0 && <p className="text-sm text-slate-400">Speak or type more text to receive reframe suggestions.</p>}
+            {report.reframes.length === 0 && analysis.wordCount < 20 && <p className="text-sm text-slate-400">Speak or type at least 20 words to receive reframe suggestions.</p>}
+            {report.reframes.length === 0 && analysis.wordCount >= 20 && (
+              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Professional reframe</p>
+                <p className="mt-2 text-sm font-semibold leading-7 text-emerald-100">
+                  {suggestedClosingSentence}
+                </p>
+              </div>
+            )}
             {report.reframes.map((item, index) => (
               <div key={`${item.original}-${index}`} className="rounded-2xl border border-white/10 bg-slate-950 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">You said</p>
-                <p className="mt-1 text-sm text-slate-300">“{item.original}”</p>
+                <p className="mt-1 text-sm text-slate-300">&ldquo;{item.original}&rdquo;</p>
                 <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-300">Better way to say it</p>
-                <p className="mt-1 text-sm font-semibold leading-6 text-emerald-100">“{item.improved}”</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-emerald-100">&ldquo;{item.improved}&rdquo;</p>
               </div>
             ))}
           </div>
