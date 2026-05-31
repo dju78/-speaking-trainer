@@ -528,7 +528,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     bottom: 0; left: 0; right: 0;
     z-index: 100;
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5 equal columns */
+    grid-template-columns: repeat(4, 1fr); /* 4 tabs */
     gap: 0;
     background: rgba(2,8,23,0.97);
     backdrop-filter: blur(20px);
@@ -712,7 +712,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .mode-list { flex-direction: row; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.5rem; }
   .mode-list::-webkit-scrollbar { display: none; }
   .mode-btn { min-width: 200px; flex-shrink: 0; }
-  .tab-nav  { grid-template-columns: repeat(5, 1fr); }
+  .tab-nav  { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* Improve touch targets globally for touch devices */
