@@ -293,18 +293,31 @@ export default function ProfessionalSpeakerTrainerApp() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="mb-8 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-6 shadow-2xl">
+        <header className="mb-8 overflow-hidden rounded-3xl border border-[#082554]/20 bg-[#082554] p-6 shadow-2xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">
-                <Sparkles size={16} /> Professional Speaking Coach
+              <div className="mb-6 flex items-center gap-4">
+                <img src="/favicon.svg" alt="Daramola Digital Labs Logo" className="h-16 w-16" />
+                <div>
+                  <h2 className="text-xl font-bold text-white">Speaking Trainer</h2>
+                  <p className="text-sm font-bold text-[#16864C] bg-[#F8FAFC] px-2 py-0.5 rounded inline-block mt-1">by Daramola Digital Labs</p>
+                </div>
               </div>
-              <h1 className="max-w-3xl text-2xl font-bold tracking-tight sm:text-3xl lg:text-5xl">
+
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm text-[#F8FAFC]">
+                <Sparkles size={16} className="text-[#C49A2C]" /> A product of Daramola Digital Labs
+              </div>
+              <h1 className="max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-5xl">
                 Speak clearly, recover confidently, and track real communication progress.
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-                Start speaking, end with "thank you", and receive a Live Communication Coach report with reframes, progress feedback, and your next drill.
+              <p className="mt-4 max-w-2xl text-base leading-7 text-white/90">
+                Speaking Trainer helps users practise spoken communication, improve pronunciation, review transcripts, and build confidence for interviews, presentations, workplace conversations and professional communication.
               </p>
+              <div className="mt-5 max-w-2xl border-l-4 border-[#16864C] pl-4">
+                <p className="text-sm leading-6 text-[#C49A2C] font-medium">
+                  Daramola Digital Labs builds practical, data-driven digital tools that support compliance, financial reporting, research, education, healthcare and community development. Our products combine data analysis, automation and user-centred design to solve real-world problems.
+                </p>
+              </div>
             </div>
             <div className="grid min-w-[260px] grid-cols-3 gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
               <StatCard label="Today" value={todaySessions} icon={<CheckCircle2 size={18} />} />
@@ -373,6 +386,16 @@ export default function ProfessionalSpeakerTrainerApp() {
         {activeTab === "library" && <PhraseLibrary />}
         {activeTab === "progress" && <ProgressRoom sessions={sessions} setSessions={setSessions} />}
       </div>
+
+      <footer className="mt-8 border-t border-white/10 bg-[#082554] py-8 text-center text-sm text-[#F8FAFC]">
+        <div className="mx-auto max-w-7xl px-4 flex flex-col items-center gap-3">
+          <img src="/favicon.svg" alt="Daramola Digital Labs Logo" className="h-8 w-8 opacity-90" />
+          <div>
+            <p>© 2026 Daramola Digital Labs. All rights reserved.</p>
+            <p className="mt-1 text-white/70">Speaking Trainer is a product of Daramola Digital Labs.</p>
+          </div>
+        </div>
+      </footer>
 
       {showRecovery && <MindBlankOverlay onClose={() => setShowRecovery(false)} />}
     </div>

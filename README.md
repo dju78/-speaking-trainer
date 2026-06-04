@@ -1,16 +1,48 @@
-# React + Vite
+# Speaking Trainer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Speaking Trainer](public/favicon.svg)
 
-Currently, two official plugins are available:
+**Speaking Trainer** by Daramola Digital Labs
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Speaking Trainer helps users practise spoken communication, improve pronunciation, review transcripts, and build confidence for interviews, presentations, workplace conversations and professional communication.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🏢 About Daramola Digital Labs
 
-## Expanding the ESLint configuration
+Daramola Digital Labs builds practical, data-driven digital tools that support compliance, financial reporting, research, education, healthcare and community development. Our products combine data analysis, automation and user-centred design to solve real-world problems.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## ✨ Features
+
+- **Live Communication Coaching:** Get real-time feedback on your pace, structure, and clarity.
+- **Mind Blank Rescue:** Quickly recover when you lose your train of thought with intelligent prompts.
+- **Progress Tracking:** Save your sessions, monitor your improvements, and track metrics like Words Per Minute (WPM) and filler words.
+- **Phrase Library:** Access a comprehensive library of professional phrases for various scenarios.
+- **Transcript Analysis:** Review your raw, cleaned, and professionally rewritten transcripts.
+
+## 🚀 Getting Started
+
+To run the project locally, ensure you have Node.js installed.
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+3. Build for production:
+   ```bash
+   npm run build
+   ```
+
+## 📄 License
+
+© 2026 Daramola Digital Labs. All rights reserved.
+
+Speaking Trainer is a product of Daramola Digital Labs.
