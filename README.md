@@ -1,5 +1,32 @@
 # Professional Speaking Trainer
 
+AI-powered communication coaching platform that helps professionals improve public speaking, workplace communication, interviews, presentations, and pronunciation through real-time AI feedback.
+
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
+![Claude](https://img.shields.io/badge/Claude-Opus_4-black)
+![License](https://img.shields.io/badge/License-Proprietary-black)
+
+🌐 **Live Demo:** https://speech.omoyelejd.co.uk
+
+🏢 **Portfolio:** https://daramolajo.co.uk
+
+![Speaking Trainer Homepage](public/speaking-trainer-homepage.png)
+
+---
+## ✨ Highlights
+
+- 🎤 Real-time speech coaching
+- 🤖 AI-powered communication feedback
+- 📝 Automatic transcript generation
+- 📊 Progress tracking and analytics
+- 🧠 Mind Blank Rescue assistance
+- 💼 Interview and presentation practice
+- 📚 Professional phrase library
+
+> **Speaking Trainer dashboard** – real-time speech practice, feedback, transcript review, and confidence-building tools in one workspace.
+
 **by Daramola Digital Labs**
 
 > *Speak with confidence. Present with impact.*
@@ -31,12 +58,12 @@ Daramola Digital Labs builds practical, data-driven digital tools that support c
 
 ## Tech Stack
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Web Speech API
-- Claude AI / Anthropic API
+- **Frontend:** React 19 + TypeScript + Vite
+- **Styling:** Tailwind CSS
+- **Speech Recognition:** Web Speech API
+- **AI:** Claude (Anthropic API)
+- **State Management:** React Hooks
+- **Hosting:** Vercel
 
 ## 🚀 Getting Started
 
@@ -56,17 +83,28 @@ To run the project locally, ensure you have Node.js installed.
    ```bash
    npm run build
    ```
+Open http://localhost:5173 in your browser.
+
+## Privacy
+
+- No user accounts required
+- Speech remains in your browser unless AI feedback is requested
+- No personal recordings are permanently stored
+- API keys remain server-side
 
 ## Roadmap
 
 Planned enhancements include:
 
 - AI mock interview simulator
-- Presentation scoring
-- STAR interview coaching
-- Public speaking analytics
-- Pronunciation improvement feedback
-- Team and organisation dashboards
+- Presentation coaching
+- STAR interview practice
+- Pronunciation scoring
+- Workplace conversation scenarios
+- Team learning dashboard
+- Organisation analytics
+- Mobile PWA support
+- Voice history and progress reports
   
 ## 📄 License
 
